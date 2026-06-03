@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./server:/app
+      - ./server/keys:/app/keys:ro
+    networks:
+      - kirov-network
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_AUTH_URL=http://localhost:8000
+    depends_on:
+      - server
+    networks:
+      - kirov-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=kirov
+      - POSTGRES_PASSWORD=kirov
+      - POSTGRES_DB=secure_auth
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kirov"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kirov-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass kirov123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kirov-network
+    restart: unless-stopped
+
+  ldap:
+    image: osixia/openldap:1.5.0
+    ports:
+      - "389:389"
+      - "636:636"
+    environment:
+      - LDAP_ORGANISATION=Kirov Security
+      - LDAP_DOMAIN=kirov.local
+      - LDAP_ADMIN_PASSWORD=admin123
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+    networks:
+      - kirov-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  ldap_data:
+  ldap_config:
+
+networks:
+  kirov-network:
+    driver: bridge
