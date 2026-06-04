@@ -35,6 +35,16 @@ saml-keys/
 mfa-backup-codes/
 *.secret
 
+# Environment
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# Vercel
+.vercel
+
 # Docker
 docker-compose.override.yml
 
