@@ -14,7 +14,7 @@ greenlet==3.0.3
 webauthn==2.0.1
 pyotp==2.9.0
 qrcode==7.4.2
-python-ldap==3.4.4
+python-ldap==3.4.5
 python-saml==1.16.0
 scikit-learn==1.4.1.post1
 xgboost==2.0.3
